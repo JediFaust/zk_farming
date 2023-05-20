@@ -2,16 +2,12 @@
 
 pragma solidity 0.8.13;
 
+import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
 /// @title Farming contract for zkSync
 /// @author https://github.com/JediFaust
 /// @notice You can use this contract for implement Farming on EVM compatible chains
 /// @dev All functions tested successfully and have no errors
-
-interface IERC20 {
-    function transfer(address to, uint256 amount) external returns (bool);
-
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-}
 
 contract ZKFarming {  
     address public admin;

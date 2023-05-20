@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/zkFarm.sol";
 
-import "openzeppelin-contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 contract CounterTest is Test {
     ZKFarming public farming;
