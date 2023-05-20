@@ -11,15 +11,15 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract ZKFarming {  
     address public admin;
-    uint224 public rewardRate;
-    uint32 public rewardPercent;
+    uint256 public rewardPercent;
+    uint256 public rewardRate;
 
     mapping(address => Deposit) private deposits;
 
-    uint256 constant MAXIMUM_REWARD_PERCENT = 1000;
+    uint256 public constant MAXIMUM_REWARD_PERCENT = 1000;
 
-    IERC20 private tokenA;
-    IERC20 private tokenB;
+    IERC20 public rewardToken;
+    IERC20 public depositToken;
 
     struct Deposit {
         uint224 amount;
@@ -28,18 +28,18 @@ contract ZKFarming {
 
     /// @notice Deploys the contract with the initial parameters
     /// @dev Sets deployer as an Admin
-    /// @param tokenB_ Address of Deposit Token 
-    /// @param tokenA_ Address of Reward Token
-    /// @param rewardRate_ Rate of Rewarding
+    /// @param depositToken_ Address of Deposit Token 
+    /// @param rewardToken_ Address of Reward Token
+    /// @param rewardRate_ Rate of Rewarding in seconds
     /// @param rewardPercent_ Percent of Reward scaled up to 10
     constructor(
-        address tokenA_,
-        address tokenB_,
-        uint224 rewardRate_,
-        uint32 rewardPercent_) {
+        address rewardToken_,
+        address depositToken_,
+        uint256 rewardPercent_,
+        uint256 rewardRate_) {
             admin = msg.sender;
-            tokenA = IERC20(tokenA_);
-            tokenB = IERC20(tokenB_);
+            rewardToken = IERC20(rewardToken_);
+            depositToken = IERC20(depositToken_);
             rewardPercent = rewardPercent_;
             rewardRate = rewardRate_;
     }
@@ -63,9 +63,7 @@ contract ZKFarming {
 
         require(d.depositTime == 0, "FARM: Already Deposited");
 
-        require(
-            tokenB.transferFrom(msg.sender, address(this), amount),
-            "FARM: Transfer Failed");
+        depositToken.transferFrom(msg.sender, address(this), amount);
 
         d.amount = amount;
         d.depositTime = uint32(block.timestamp);
@@ -90,12 +88,10 @@ contract ZKFarming {
             ((block.timestamp - d.depositTime) / rewardRate);
             
         if(reward > 0) { 
-            require(
-                tokenA.transfer(msg.sender, reward),
-                "FARM: Rewarding Failed");
+            rewardToken.transfer(msg.sender, reward);
         }
 
-        require(tokenB.transfer(msg.sender, d.amount), "FARM: Transfer Failed");
+        depositToken.transfer(msg.sender, d.amount);
 
         d.amount = 0;
         d.depositTime = 0;
@@ -112,10 +108,7 @@ contract ZKFarming {
     /// @return true if transaction is successful
     function fillRewards(uint256 amount) external onlyAdmin returns(bool) {
         require(amount > 0, "FARM: Zero Filment");
-        require(
-            tokenA.transferFrom(msg.sender, address(this), amount),
-            "FARM: Filment Failed"
-        );
+        rewardToken.transferFrom(msg.sender, address(this), amount);
 
         emit RewardFilled(amount, block.timestamp);
 
@@ -127,7 +120,7 @@ contract ZKFarming {
     /// @param newPercent Sets amount of Reward Percent scaled to 10
     /// for example 100% is 1000 and 0.1% is 1
     /// @return true if transaction is successful
-    function setRewardPercent(uint32 newPercent) external onlyAdmin returns(bool) {
+    function setRewardPercent(uint256 newPercent) external onlyAdmin returns(bool) {
         require(
             newPercent > 0 && newPercent <= MAXIMUM_REWARD_PERCENT,
             "FARM: Invalid Reward Percent");
@@ -143,7 +136,7 @@ contract ZKFarming {
     /// @dev emits RewardRateChanged event
     /// @param newRate Sets Reward Rate in seconds
     /// @return true if transaction is successful
-    function setRewardRate(uint224 newRate) external onlyAdmin returns(bool) {
+    function setRewardRate(uint256 newRate) external onlyAdmin returns(bool) {
         require(newRate > 0, "FARM: Zero Reward Rate");
 
         emit RewardRateChanged(rewardRate, newRate, block.timestamp);
